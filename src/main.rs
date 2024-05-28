@@ -1,10 +1,9 @@
 mod database;
 
 use chrono::{DateTime, Utc};
-use database::{migrate_database, Table};
-
+use database::{Connection, Table};
 fn main() {
-    migrate_database();
+    let cnn = Connection::from("todo.db");
 }
 
 struct List {

@@ -6,50 +6,53 @@ pub trait Table {
     fn get_table_name() -> String;
 }
 
-struct Connection {
+pub struct Connection {
     connection_name: String,
 }
 
 impl Connection {
-    fn from(connection_string: &str) -> Connection {
-        return Connection {
-            connection_name: String::from(connection_string),
+    pub fn from(connection_string: &str) -> Connection {
+        let cnn = Connection {
+            connection_name: connection_string.to_string()
         };
+
+        cnn.migrate_database();
+        return cnn;
     }
 
-    fn create<T: Table>(&self) {
-        let cnn = open(&self.connection_name).unwrap();
+    fn get_connection(&self) -> Result<sqlite::Connection, sqlite::Error> {
+        return open(&self.connection_name);
+    }
 
-        //TODO: FIX THIS SHIH
+    pub fn sql(&self, sql: &str) -> Result<(), sqlite::Error>{
+        let cnn = self.get_connection().unwrap();
+        return cnn.execute(sql);
+    }
+
+    pub fn remove_by_id<T: Table>(&self, id: u32) {
+        let cnn = self.get_connection().unwrap();
+
         cnn.execute(format!(
-            "INSERT INTO {table_name} VALUES",
-            table_name = T::get_table_name()
+            "DELETE FROM {table_name} x WHERE x.Id = {id}",
+            table_name = T::get_table_name(),
+            id = id
         ))
         .unwrap();
     }
-}
 
-pub fn migrate_database() {
-    let cnn = get_connection().unwrap();
+    fn migrate_database(&self) {
+        let cnn = self.get_connection().unwrap();
 
-    cnn.execute(format!(
-        "CREATE TABLE IF NOT EXISTS {table_name} (name TEXT)",
-        table_name = List::get_table_name()
-    ))
-    .unwrap();
+        cnn.execute(format!(
+            "CREATE TABLE IF NOT EXISTS {table_name} (name TEXT)",
+            table_name = List::get_table_name()
+        ))
+        .unwrap();
 
-    cnn.execute(
+        cnn.execute(
             format!("CREATE TABLE IF NOT EXISTS {table_name} (name TEXT, description TEXT, is_finished INTEGER,finished_time TEXT, list_id INTEGER)", table_name = Item::get_table_name()),
-    )
-    .unwrap();
-}
-
-pub fn add(list: List) {
-    let cnn = get_connection().unwrap();
-
-    cnn.execute("Test");
-}
-
-pub fn get_connection() -> Result<sqlite::Connection, sqlite::Error> {
-    return open("todo.db");
+    
+        )
+        .unwrap();
+    }
 }
