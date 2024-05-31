@@ -1,6 +1,6 @@
 use sqlite::open;
 
-use crate::{Item, List};
+use crate::Item;
 
 pub trait Table {
     fn get_table_name() -> String;
@@ -20,20 +20,31 @@ impl Connection {
         return cnn;
     }
 
-    fn get_connection(&self) -> Result<sqlite::Connection, sqlite::Error> {
-        return open(&self.connection_name);
+    fn get_connection(&self) -> sqlite::Connection {
+        return open(&self.connection_name).unwrap();
     }
 
-    pub fn sql(&self, sql: &str) -> Result<(), sqlite::Error>{
-        let cnn = self.get_connection().unwrap();
-        return cnn.execute(sql);
+    pub fn query(&self, sql: String) -> Result<(), sqlite::Error>{
+        let cnn = self.get_connection();
+        return cnn.iterate(sql, |x| {
+            for &(name, value) in x.iter() {
+                println!("{} = {}", name, value.unwrap());
+            }
+            true
+        });
+    }
+
+    pub fn create(&self, sql: String) {
+        let cnn = self.get_connection();
+
+        cnn.execute(sql).unwrap();
     }
 
     pub fn remove_by_id<T: Table>(&self, id: u32) {
-        let cnn = self.get_connection().unwrap();
+        let cnn = self.get_connection();
 
         cnn.execute(format!(
-            "DELETE FROM {table_name} x WHERE x.Id = {id}",
+            "DELETE FROM {table_name} WHERE id = {id}",
             table_name = T::get_table_name(),
             id = id
         ))
@@ -41,16 +52,10 @@ impl Connection {
     }
 
     fn migrate_database(&self) {
-        let cnn = self.get_connection().unwrap();
-
-        cnn.execute(format!(
-            "CREATE TABLE IF NOT EXISTS {table_name} (name TEXT)",
-            table_name = List::get_table_name()
-        ))
-        .unwrap();
+        let cnn = self.get_connection();
 
         cnn.execute(
-            format!("CREATE TABLE IF NOT EXISTS {table_name} (name TEXT, description TEXT, is_finished INTEGER,finished_time TEXT, list_id INTEGER)", table_name = Item::get_table_name()),
+            format!("CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, name TEXT, description TEXT, is_finished INTEGER,finished_time TEXT)", table_name = Item::get_table_name()),
     
         )
         .unwrap();
