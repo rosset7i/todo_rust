@@ -22,7 +22,7 @@ fn main() {
             "m" => mark_as_done(&cnn),
             "l" => see_to_do(&cnn),
             "q" => quit = true,
-            _ => println!("{}", buffer.as_str()),
+            _ => println!("Invalid input!"),
         }
     }
 }
