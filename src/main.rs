@@ -10,8 +10,12 @@ fn main() {
     let mut quit = false;
 
     while !quit {
+        println!("-------------------------");
+        println!("'a' - [A]dd New Item\n'r' - [R]emove Item\n'm' - [M]ark As Done\n'l' - [L]ist All\n'q' - [Q]uit");
+
         let buffer = get_input();
 
+        println!("-------------------------");
         match buffer.as_str().trim() {
             "a" => add_to_do(&cnn),
             "r" => remove_to_do(&cnn),
@@ -28,6 +32,7 @@ fn see_to_do(cnn: &Connection) {
 }
 
 fn mark_as_done(cnn: &Connection) {
+    println!("Which item you want to mark as done?: ");
     let input: u32 = get_input().parse().unwrap();
 
     cnn.create(format!(
